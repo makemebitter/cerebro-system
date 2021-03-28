@@ -455,6 +455,23 @@ def _make_mapper(driver_addresses, settings):
     return _mapper
 
 
+def create_optimizer_from_mst(lr):
+    optimizer = tf.keras.optimizers.Adam(lr=lr)
+    return optimizer
+
+
+def compile_model_from_mst(lr, model):
+    optimizer = create_optimizer_from_mst(lr)
+    top_5 = 'top_k_categorical_accuracy'
+    top_1 = 'categorical_accuracy'
+    model.compile(optimizer=optimizer,  # Optimizer
+                  # Loss function to minimize
+                  loss='categorical_crossentropy',
+                  # List of metrics to monitor
+                  metrics=[top_5, top_1])
+    return model
+
+
 def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx, train_rows, val_rows,
                       num_workers):
     # Estimator parameters
@@ -489,6 +506,8 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx, tra
     # Storage
     store = estimator.getStore()
     remote_store = store.to_remote(run_id, dataset_idx)
+
+    lr = estimator.getOptimizer().learning_rate.numpy()
 
     def train(data_reader, is_train, starting_epoch, local_task_index=0):
 
@@ -531,8 +550,7 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx, tra
                 model = deserialize_keras_model(
                     remote_store.get_last_checkpoint(), lambda x: tf.keras.models.load_model(x))
             # compile
-            # estimator.setModel(model)
-            # model = estimator._compile_model(keras_utils)
+            model = compile_model_from_mst(lr, model)
 
             steps_per_epoch = int(math.ceil(train_rows / batch_size / num_workers))
 
