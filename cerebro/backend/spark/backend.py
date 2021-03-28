@@ -362,7 +362,7 @@ def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns,
         model = estimator._compile_model(keras_utils)
         with remote_store.get_local_output_dir() as run_output_dir:
             ckpt_file = os.path.join(run_output_dir, remote_store.checkpoint_filename)
-            model.save(ckpt_file)
+            model.save(ckpt_file, include_optimizer=False)
             remote_store.sync(run_output_dir)
 
     if verbose >= 2:
@@ -530,7 +530,9 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx, tra
             with tf.keras.utils.custom_object_scope(custom_objects):
                 model = deserialize_keras_model(
                     remote_store.get_last_checkpoint(), lambda x: tf.keras.models.load_model(x))
-
+            # compile
+            estimator.setModel(model)
+            model = estimator._compile_model(keras_utils)
             steps_per_epoch = int(math.ceil(train_rows / batch_size / num_workers))
 
             # math.ceil because if val_rows is smaller than batch_size we still get the at least
@@ -551,7 +553,7 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx, tra
                 training_time = time.time() - begin_time
                 begin_time = time.time()
                 result = {'train_' + name: result[name] for name in result}
-                model.save(ckpt_file)
+                model.save(ckpt_file, include_optimizer=False)
             else:
                 val_data = make_dataset(data_reader, shuffle_buffer_size, shuffle=False)
                 initialization_time = time.time() - begin_time
