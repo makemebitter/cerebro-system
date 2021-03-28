@@ -531,8 +531,9 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx, tra
                 model = deserialize_keras_model(
                     remote_store.get_last_checkpoint(), lambda x: tf.keras.models.load_model(x))
             # compile
-            estimator.setModel(model)
-            model = estimator._compile_model(keras_utils)
+            # estimator.setModel(model)
+            # model = estimator._compile_model(keras_utils)
+
             steps_per_epoch = int(math.ceil(train_rows / batch_size / num_workers))
 
             # math.ceil because if val_rows is smaller than batch_size we still get the at least
