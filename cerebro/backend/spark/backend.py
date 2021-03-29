@@ -468,7 +468,7 @@ def compile_model_from_mst(lr, model):
                   # Loss function to minimize
                   loss='categorical_crossentropy',
                   # List of metrics to monitor
-                  metrics=[top_5, top_1])
+                  metrics=[top_1, top_5])
     return model
 
 
