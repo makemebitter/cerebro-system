@@ -494,10 +494,10 @@ def _create_dataset(store, df, validation, sample_weight_col, compress_sparse,
         train_rdd = train_df.rdd.map(lambda x: x.asDict()).map(
             lambda x: {k: np.array(x[k], dtype=spark_to_petastorm_type(metadata[k]['spark_data_type'])) for k in x}) \
             .map(lambda x: dict_to_spark_row(petastorm_schema, x))
-
+        print("Train numpartitions: {}".format(train_rdd.getNumPartitions()))
         spark.createDataFrame(train_rdd, petastorm_schema.as_spark_schema()) \
-            .coalesce(train_partitions) \
             .write \
+            .option("maxRecordsPerFile", 10000) \
             .mode('overwrite') \
             .parquet(train_data_path)
 
@@ -516,10 +516,10 @@ def _create_dataset(store, df, validation, sample_weight_col, compress_sparse,
             val_rdd = val_df.rdd.map(lambda x: x.asDict()).map(
                 lambda x: {k: np.array(x[k], dtype=spark_to_petastorm_type(metadata[k]['spark_data_type'])) for k in x}) \
                 .map(lambda x: dict_to_spark_row(petastorm_schema, x))
-
+            print("Val numpartitions: {}".format(val_rdd.getNumPartitions()))
             spark.createDataFrame(val_rdd, petastorm_schema.as_spark_schema()) \
-                .coalesce(val_partitions) \
                 .write \
+                .option("maxRecordsPerFile", 10000) \
                 .mode('overwrite') \
                 .parquet(val_data_path)
 
