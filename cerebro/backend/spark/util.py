@@ -489,15 +489,20 @@ def _create_dataset(store, df, validation, sample_weight_col, compress_sparse,
                                         spark.sparkContext._jsc.hadoopConfiguration(),
                                         user=spark.sparkContext.sparkUser(),
                                         hdfs_driver=constants.PETASTORM_HDFS_DRIVER)
+    
     with materialize_dataset(spark, train_data_path, petastorm_schema, parquet_row_group_size_mb,
                              filesystem_factory=train_resolver.filesystem_factory()):
-        train_rdd = train_df.rdd.map(lambda x: x.asDict()).map(
-            lambda x: {k: np.array(x[k], dtype=spark_to_petastorm_type(metadata[k]['spark_data_type'])) for k in x}) \
-            .map(lambda x: dict_to_spark_row(petastorm_schema, x))
-
+        def udf(x):
+            x = x.asDict()
+            x = {k: np.array(x[k], dtype=spark_to_petastorm_type(metadata[k]['spark_data_type'])) for k in x}
+            x = dict_to_spark_row(petastorm_schema, x)
+            return x
+        
+        train_rdd = train_df.rdd.map(udf)
+        print("Train numpartitions: {}".format(train_rdd.getNumPartitions()))
         spark.createDataFrame(train_rdd, petastorm_schema.as_spark_schema()) \
-            .coalesce(train_partitions) \
             .write \
+            .option("maxRecordsPerFile", 10000) \
             .mode('overwrite') \
             .parquet(train_data_path)
 
@@ -516,10 +521,10 @@ def _create_dataset(store, df, validation, sample_weight_col, compress_sparse,
             val_rdd = val_df.rdd.map(lambda x: x.asDict()).map(
                 lambda x: {k: np.array(x[k], dtype=spark_to_petastorm_type(metadata[k]['spark_data_type'])) for k in x}) \
                 .map(lambda x: dict_to_spark_row(petastorm_schema, x))
-
+            print("Val numpartitions: {}".format(val_rdd.getNumPartitions()))
             spark.createDataFrame(val_rdd, petastorm_schema.as_spark_schema()) \
-                .coalesce(val_partitions) \
                 .write \
+                .option("maxRecordsPerFile", 10000) \
                 .mode('overwrite') \
                 .parquet(val_data_path)
 
