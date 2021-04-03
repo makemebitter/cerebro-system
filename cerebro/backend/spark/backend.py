@@ -378,7 +378,7 @@ def _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size, cac
 
         PETASTORM_HDFS_DRIVER = constants.PETASTORM_HDFS_DRIVER
 
-        train_reader = make_reader(remote_store.train_data_path, shuffle_row_groups=True, num_epochs=None,
+        train_reader = make_reader(remote_store.train_data_path, shuffle_row_groups=True, shuffle_row_drop_partitions=2, num_epochs=None,
                                    cur_shard=index,
                                    shard_count=shard_count,
                                    hdfs_driver=PETASTORM_HDFS_DRIVER,
@@ -390,7 +390,7 @@ def _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size, cac
                                    cache_row_size_estimate=avg_row_size)
 
         if remote_store.val_data_path != '' and remote_store.val_data_path is not None:
-            val_reader = make_reader(remote_store.val_data_path, shuffle_row_groups=True, num_epochs=None,
+            val_reader = make_reader(remote_store.val_data_path, shuffle_row_groups=True, shuffle_row_drop_partitions=2, num_epochs=None,
                                      cur_shard=index,
                                      shard_count=shard_count,
                                      hdfs_driver=PETASTORM_HDFS_DRIVER,
