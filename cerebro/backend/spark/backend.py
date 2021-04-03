@@ -378,7 +378,7 @@ def _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size, cac
 
         PETASTORM_HDFS_DRIVER = constants.PETASTORM_HDFS_DRIVER
 
-        train_reader = make_reader(remote_store.train_data_path, shuffle_row_groups=True, shuffle_row_drop_partitions=2, num_epochs=None,
+        train_reader = make_reader(remote_store.train_data_path, shuffle_row_groups=True, num_epochs=None,
                                    cur_shard=index,
                                    shard_count=shard_count,
                                    hdfs_driver=PETASTORM_HDFS_DRIVER,
@@ -390,7 +390,7 @@ def _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size, cac
                                    cache_row_size_estimate=avg_row_size)
 
         if remote_store.val_data_path != '' and remote_store.val_data_path is not None:
-            val_reader = make_reader(remote_store.val_data_path, shuffle_row_groups=True, shuffle_row_drop_partitions=2, num_epochs=None,
+            val_reader = make_reader(remote_store.val_data_path, shuffle_row_groups=True, num_epochs=None,
                                      cur_shard=index,
                                      shard_count=shard_count,
                                      hdfs_driver=PETASTORM_HDFS_DRIVER,
@@ -564,7 +564,7 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx, tra
                 schema_fields.append(sample_weight_col)
 
             if is_train:
-                train_data = make_dataset(data_reader, shuffle_buffer_size, shuffle=False)
+                train_data = make_dataset(data_reader, 1000, shuffle=True)
                 initialization_time = time.time() - begin_time
                 begin_time = time.time()
                 result = fit_sub_epoch_fn(starting_epoch, model, train_data, steps_per_epoch, callbacks,
